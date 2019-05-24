@@ -129,22 +129,6 @@
 </div>
 
 <style>
-	h1 {
-		font-size: 3em;
-		padding: 0px;
-		font-weight: normal;
-		text-align: center;
-		text-transform: uppercase;
-	}
-
-	.lede {
-		font-style: italic;
-		font-weight: 400;
-		font-size: .9em;
-		font-size: 14px;
-		line-height: 1.4em;
-		text-align: center;
-	}
 	.chart {
 		width: 100%;
 		max-width: 960px;
