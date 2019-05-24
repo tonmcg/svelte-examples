@@ -2,7 +2,7 @@
 	import { tweened } from 'svelte/motion';
 	import * as easings from 'svelte/easing';
 	
-	let tween = tweened(Array.apply(null, {length: 10}).map(window.Function.call, Math.random), {
+	let tween = tweened([...Array(10)].map(Math.random), {
 		delay: 0,
 		duration: 3000,
 		easing: easings.sineOut
@@ -40,7 +40,7 @@
 		</tbody>
 	</table>
 	<br/>
-	<button on:click={() => { tween.set(Array.apply(null, {length: 10}).map(window.Function.call, Math.random)) } }>
+	<button on:click={() => { tween.set([...Array(10)].map(Math.random)) } }>
 		Tween Me!
 	</button>
 	
