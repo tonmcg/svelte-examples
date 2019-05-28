@@ -1,9 +1,10 @@
 <script>
-	import {tweened} from 'svelte/motion';
-	import {onMount} from 'svelte';
-	import {scaleLinear} from 'd3-scale';
-	import {mean,variance,extent} from 'd3-array';
-	import {regressionLinear} from 'd3-regression';
+	import { tweened } from 'svelte/motion';
+	import { fade } from 'svelte/transition';
+	import { onMount } from 'svelte';
+	import { scaleLinear } from 'd3-scale';
+	import { mean,variance,extent } from 'd3-array';
+	import { regressionLinear } from 'd3-regression';
 	import * as easings from 'svelte/easing';
 	import data from './data.1.js';
 	import SVGCircle from './SVGCircle.svelte';
@@ -18,16 +19,22 @@
 
 	// chart margins
 	const margins = {
-		top: 20,
-		right: 20,
-		bottom: 40,
-		left: 50
+		top: 30,
+		right: 30,
+		bottom: 60,
+		left: 60
 	};
 
 	// chart size
 	let svg;
 	let width = 960;
 	let height = 450;
+
+	// MATHS
+	let xArr = [];
+	let yArr = [];
+	Object.keys(data).forEach((arr)=> data[arr].map((d)=> xArr.push(d.x)));
+	Object.keys(data).forEach((arr)=> data[arr].map((d)=> yArr.push(d.y)));
 
 	// tweening function
 	const tweenedPoints = tweened(points, {
@@ -36,26 +43,30 @@
 		easing: easings.cubicOut
 	});
 
-	// MATHS
-	let xArr = [];
-	let yArr = [];
-	Object.keys(data).forEach((arr)=> data[arr].map((d)=> xArr.push(d.x)));
-	Object.keys(data).forEach((arr)=> data[arr].map((d)=> yArr.push(d.y)));
+	// extent of the x and y values
 	$: [minX, maxX] = extent(xArr);
 	$: [minY, maxY] = extent(yArr);
+	// mean of x
 	$: muX = mean($tweenedPoints, (d) => d.x).toPrecision(3);
+	// mean of y
 	$: muY = mean($tweenedPoints, (d) => d.y).toPrecision(3);
-	$: sigmaX = variance($tweenedPoints, (d) => d.x).toPrecision(3);
-	$: sigmaY = variance($tweenedPoints, (d) => d.y).toPrecision(3);
+	// variance of x
+	$: varX = variance($tweenedPoints, (d) => d.x).toPrecision(3);
+	// variance of y
+	$: varY = variance($tweenedPoints, (d) => d.y).toPrecision(3);
+	// coefficient of determination
 	$: r_sq = lg.rSquared.toPrecision(2);
+	// correlation of x and y
 	$: r = Math.sqrt(r_sq).toPrecision(2);
-	$: beta = lg.b.toPrecision(3);
-	$: alpha = lg.a.toPrecision(3);
+	// y-intercept
+	$: yInt = lg.b.toPrecision(3);
+	// slope
+	$: slope = lg.a;
 
 	// scales
 	$: xScale = scaleLinear()
 		.domain([0, maxX * 1.1])
-		.range([margins.left, width - margins.right]);
+		.range([margins.left, width - margins.right + margins.left]);
 
 	$: yScale = scaleLinear()
 		.domain([0, maxY * 1.1])
@@ -63,18 +74,18 @@
 
 	// ticks
 	$: xTicks = width > 540 ?
-		xScale.ticks() :
+		xScale.ticks() : // defaults to 10 ticks, which seems reasonable to me
 		xScale.ticks(3);
 
 	$: yTicks = height > 180 ?
-		xScale.ticks() :
-		xScale.ticks(3);
+		yScale.ticks() : // defaults to 10 ticks
+		yScale.ticks(3);
 
 	// linear regression
 	$: linearRegression = regressionLinear()
 		.x(d => d.x)
 		.y(d => d.y)
-		.domain([0, maxX * 1.1]);
+		.domain([extent(xTicks)[0], extent(xTicks)[1]]);
 
 	// prediction
 	$: lg = linearRegression($tweenedPoints);
@@ -101,75 +112,87 @@
 	}, 2000)
 </script>
 
-<svelte:window on:resize='{resize}' />
+<svelte:window on:resize={resize} />
 
 <div class='chart'>
-	<h1 class="g-header centered">Anscombe's Quartet</h1>
-	<p class="lede centered">Tweening a Svelte Scatterplot</p>
-
-	<h3>Member:</h3>
-	<div style='display:flex;'>
-
-		{#each Object.keys(data) as player}
-		<label style='margin:auto;'>
-			<input disabled on:change={(e)=> member = e.target.__value } type=radio bind:group={member} value={player}>
-			{player.toUpperCase()}
-		</label>
-		{/each}
-
-	</div>	
+	<h1 class="g-header centered">Datasaurus</h1>
+	<p class="lede centered">Exercises in Tweening SVG Elements with Svelte</p>
 
 	<svg bind:this={svg}>
 		<!-- y axis -->
 		<g class='axis y-axis'>
 			{#each yTicks as tick}
-			<SVGAxis axisType='yAxis' translate='translate(0, {yScale(tick)})' x1='{xScale(0)}' x2='{xScale(extent(xTicks)[1])}' x='{margins.left - 8}' y='+4' text={tick}></SVGAxis>
+			<SVGAxis axisType='yAxis' translate='translate(0, {yScale(tick)})' x1={xScale(extent(xTicks)[0])} x2={xScale(extent(xTicks)[1])} x={margins.left - 4} y='4' text={tick}></SVGAxis>
 			{/each}
 			<!-- label -->
-			<text class='label' transform={'translate(' + (margins.left - 36) + ',' + ((height - (margins.bottom - margins.top)) / 2 )+ ')'} text-anchor='middle'>y1</text>
+			<text class='label' transform={'translate(0,' + ((height - margins.bottom + margins.top) / 2) + ')'} x='4' y='4' text-anchor='start'>y1</text>
 		</g>
 
 		<!-- x axis -->
 		<g class='axis x-axis'>
 			{#each xTicks as tick}
-			<SVGAxis axisType='xAxis' translate='translate({xScale(tick)},0)' y1='{yScale(0)}' y2='{yScale(extent(yTicks)[1])}' y='{height - margins.bottom + 16}' text={tick}></SVGAxis>
+			<SVGAxis axisType='xAxis' translate='translate({xScale(tick)},0)' y1={yScale(extent(yTicks)[0])} y2={yScale(extent(yTicks)[1])} y={height - margins.bottom + 12} text={tick}></SVGAxis>
 			{/each}
 			<!-- label -->
-			<text class='label' transform={'translate(' + ((width / 2) + (margins.left - margins.right)) + ',' + height + ')'} text-anchor='middle'>x1</text>
+			<text class='label' transform={'translate(' + ((width - margins.right + margins.left) / 2) + ',' + height + ')'} x='0' y='-4' text-anchor='start'>x1</text>
 		</g>
+
 		<!-- points -->
 		<g class='points'>
 			{#each $tweenedPoints as {x, y}}
-				<SVGCircle r='4' fill='grey' fillOpacity='0.4' stroke='grey' cx='{xScale(x)}' cy='{yScale(y)}'></SVGCircle>
+			<SVGCircle r='3' fill='grey' fillOpacity='0.4' stroke='orange' cx={xScale(x)} cy={yScale(y)}></SVGCircle>
 			{/each}
 		</g>
+		
 		<!-- regression line -->
-		<SVGLine translate='translate(0,0)' strokeDasharray='4,2' opacity='0.1' strokeWidth='3' x1='{xScale(lg[0][0])}' x2='{xScale(lg[1][0])}' y1='{yScale(lg[0][1])}' y2='{yScale(lg[1][1])}'></SVGLine>
+		<g transform={'translate(0,0)'}>
+			<SVGLine strokeDasharray='4,2' opacity='0.35' strokeWidth='2' x1={xScale(lg[0][0])} x2={xScale(lg[1][0])} y1={yScale(lg[0][1])} y2={yScale(lg[1][1])}></SVGLine>
+			{#if width > 540}
+			<text transform={'rotate(-' + Math.atan(1 - ((extent(yTicks)[1] - 0) / (extent(xTicks)[1] - 0)) ) * 180 / Math.PI + ')'} x={xScale(lg[0][0])} y={yScale(lg[0][1])} style='text-anchor:start;font-size:0.8em;'>{'y = ' + yInt + '+' + slope.toPrecision(3) + '(x)'}</text>
+			{/if}
+		</g>
+		<!-- Math.atan(1 - (extent(yTicks)[1] - 0) / (extent(xTicks)[1] - 0)) * 180 / Math.PI -->
+
+		<!-- data set name -->
+		<g transform={'translate(' + xScale(extent(xTicks)[1] * 0.875) + ',' + ((height - margins.bottom + 16) * 0.75) + ')'}>
+			{#each [member] as m (m)}
+			<text transition:fade class="member" x='0' y='0' text-anchor='middle'>{m.toUpperCase()}</text>
+			{/each}
+		</g>
 		
 	</svg>
 	<!-- summary statistics -->
-	<table style='margin-left:40px;'>
+	<table style={'padding-left:' + (margins.left) + 'px;padding-right:' + (margins.right) + 'px;'}>
+		<thead>
+			<tr>
+				<th>Property</th>
+				<th>Value</th>
+			</tr>
+		</thead>
 		<tbody>
 			<tr>
-				<td><span>Mean of <em>x</em></span></td><td>{muX}</td>
+				<td><span>Mean of <em>x</em></span></td>
+				<td>{muX}</td>
 			</tr>
 			<tr>
-				<td><span>Mean of <em>y</em></span></td><td>{muY}</td>
+				<td><span>Mean of <em>y</em></span></td>
+				<td>{muY}</td>
 			</tr>
 			<tr>
-				<td><span>Sample variance of <em>x</em></span></td><td>{sigmaX}</td>
+				<td><span>Sample variance of <em>x</em></span></td>
+				<td>{varX}</td>
 			</tr>
 			<tr>
-				<td><span>Sample variance of <em>y</em></span></td><td>{sigmaY}</td>
+				<td><span>Sample variance of <em>y</em></span></td>
+				<td>{varY}</td>
 			</tr>
 			<tr>
-				<td><span>Correlation between <em>x</em> and <em>y</em></span></td><td>{r}</td>
+				<td><span>Correlation between <em>x</em> and <em>y</em></span></td>
+				<td>{r}</td>
 			</tr>
 			<tr>
-				<td><span>Linear regression line</span></td><td>{'y = ' + beta + ' + ' + alpha + '(x)'}</td>
-			</tr>
-			<tr>
-				<td><span>Coefficient of determination of the linear equation</span></td><td>{r_sq}</td>
+				<td><span>Coefficient of determination of the linear equation</span></td>
+				<td>{r_sq}</td>
 			</tr>
 		</tbody>
 	</table>
@@ -195,12 +218,21 @@
 		width: 100%;
 	}
 
-	table tbody tr td:nth-child(1) {
-		font-weight: bold;
+	td:nth-child(1),
+	th:nth-child(1) {
+		text-align: left;
 		width: 65%;
 	}
 
+	td:nth-last-child(1),
+	th:nth-last-child(1) {
+		text-align: right;
+	}
+
 	.axis .label {
-		font-size: 1.3em;
+		font-size: large;
+	}
+	.member {
+		font-size: 2.5em;
 	}
 </style>
