@@ -15,7 +15,7 @@
 
 	const sweep = tweened(parseInt((Date.now() / 1000) % 60), {
 		duration: 1000,
-		easing: elasticOut
+		easing: linear
 	});
 
 	onMount(() => {
@@ -90,7 +90,7 @@
 	<circle class='clock-face' r='48'/>
 
 	<!-- logo -->
-	<image href="./svelte-logo-horizontal.svg" width="30" height="30" x="-14" y="-30"></image>
+	<image href="http://d2f0ora2gkri0g.cloudfront.net/c4/21/c42176b8-664a-427e-96d7-dc1f2e3d2b08.png" width="40" height="40" x="-17.5" y="-35"></image>
 	
 	<!-- markers -->
 	{#each [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55] as minute}
