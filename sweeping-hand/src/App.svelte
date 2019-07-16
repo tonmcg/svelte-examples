@@ -9,6 +9,7 @@
 
 	// these automatically update when `time`
 	// changes, because of the `$:` prefix
+	$: date = time.getDate();
 	$: hours = time.getHours();
 	$: minutes = time.getMinutes();
 	$: seconds = time.getSeconds();
@@ -94,14 +95,23 @@
 	
 	<!-- markers -->
 	{#each [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55] as minute}
+		{#if minute !== 45}
 		<line
 			class='major'
 			y1='36'
 			y2='45'
 			transform='rotate({30 * minute})'
 		/>
+		{:else}
+			<g transform="translate(30,-4)">
+				<rect width="12" height="8" y="0" x="0" style="fill: none;stroke-width:0.5;stroke: #000;"></rect>
+				<text x="0" y="7.5" style="font-family:'Times New Roman';font-size:0.65em;text-anchor: start;">{date}</text>
+			</g>
+		{/if}
 	
-		{#if minute}
+		{#if minute == 15}
+			<g></g>
+		{:else if minute}
 		<g transform='rotate({ (minute / 5 - 6) * 6 * (minute / (minute/5)) })'>
 			<text 
 				transform='rotate({ ((minute / 5 - 6) * 6 * (minute / (minute/5))) * -1 },0,{ 31 + (1 - (Math.abs((minute/5-6)*6*(minute/(minute/5))) * Math.PI / 180) / Math.PI) })' 
