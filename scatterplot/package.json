@@ -21,6 +21,6 @@
   },
   "dependencies": {
     "d3-regression": "^1.2.3",
-    "d3-scale": "^3.0.0"
+    "d3-scale": "^4.0.2"
   }
 }
